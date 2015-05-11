@@ -15,7 +15,7 @@ import com.lidroid.xutils.http.client.HttpRequest.HttpMethod;
 
 /**
  * 上传文件或发送数据，分为Get和Post方式
- * @Title：云屋科技
+ * @Title：chuck chan
  * @Description：
  * @date 2015-4-27 下午7:12:47
  * @author admin

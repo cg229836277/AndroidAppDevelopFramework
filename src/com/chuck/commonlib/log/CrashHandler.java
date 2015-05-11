@@ -9,8 +9,16 @@ import java.io.Writer;
 import java.lang.Thread.UncaughtExceptionHandler;  
 import java.lang.reflect.Field;  
 import java.util.Arrays;  
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;  
 import java.util.TreeSet;  
+
+import com.chuck.commonlib.http.HttpDownloadManager;
+import com.chuck.commonlib.http.HttpRequestData;
+import com.chuck.commonlib.util.FileUtil;
+import com.chuck.commonlib.util.StringUtil;
+
 import android.content.Context;  
 import android.content.pm.PackageInfo;  
 import android.content.pm.PackageManager;  
@@ -54,6 +62,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
    
     private static final String CRASH_LOG_FILE_PATH = Environment.getExternalStorageDirectory() +
     		File.separator + "crash" + File.separator;
+    private String uploadLogFileUrl = null;
       
     /** 保证只有一个CrashHandler实例 */  
     private CrashHandler() {  
@@ -66,15 +75,22 @@ public class CrashHandler implements UncaughtExceptionHandler {
         return INSTANCE;  
     }  
       
-    /** 
-     * 初始化,注册Context对象, 获取系统默认的UncaughtException处理器, 设置该CrashHandler为程序的默认处理器 
-     *  
-     * @param ctx 
-     */  
-    public void init(Context ctx) {  
+    /**
+     * 
+     * 
+     * @author admin
+     * @date 2015-5-11 上午11:33:40
+     * @param ctx
+     * @param uploadFileUrl log日志上传地址,为空的话保存在本地/mnt/sdcard/crash
+     */
+    public void init(Context ctx , String uploadFileUrl) {  
         mContext = ctx;  
         mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();  
         Thread.setDefaultUncaughtExceptionHandler(this);  
+        
+        if(!StringUtil.isEmpty(uploadFileUrl)){
+        	uploadLogFileUrl = uploadFileUrl;
+        }
     }  
       
     /** 
@@ -85,14 +101,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
         if (!handleException(ex) && mDefaultHandler != null) {  
             // 如果用户没有处理则让系统默认的异常处理器来处理  
             mDefaultHandler.uncaughtException(thread, ex);  
-        } else {  
-            // Sleep一会后结束程序  
-            // 来让线程停止一会是为了显示Toast信息给用户，然后Kill程序  
-            try {  
-                Thread.sleep(3000);  
-            } catch (InterruptedException e) {  
-                Log.e(TAG, "Error : ", e);  
-            }  
+        } else {   
             android.os.Process.killProcess(android.os.Process.myPid());  
             System.exit(0);  
         }  
@@ -134,22 +143,11 @@ public class CrashHandler implements UncaughtExceptionHandler {
      * @param ctx 
      */  
     public void collectCrashDeviceInfo(Context ctx) {  
-        try {  
-            // Class for retrieving various kinds of information related to the  
-            // application packages that are currently installed on the device.  
-            // You can find this class through getPackageManager().  
+        try {   
             PackageManager pm = ctx.getPackageManager();  
-            // getPackageInfo(String packageName, int flags)  
-            // Retrieve overall information about an application package that is installed on the system.  
-            // public static final int GET_ACTIVITIES  
-            // Since: API Level 1 PackageInfo flag: return information about activities in the package in activities.  
             PackageInfo pi = pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_ACTIVITIES);  
             if (pi != null) {  
-                // public String versionName The version name of this package,  
-                // as specified by the <manifest> tag's versionName attribute.  
                 mDeviceCrashInfo.put(VERSION_NAME, pi.versionName == null ? "not set" : pi.versionName);  
-                // public int versionCode The version number of this package,   
-                // as specified by the <manifest> tag's versionCode attribute.  
                 mDeviceCrashInfo.put(VERSION_CODE, pi.versionCode);  
             }  
         } catch (NameNotFoundException e) {  
@@ -187,7 +185,6 @@ public class CrashHandler implements UncaughtExceptionHandler {
         // printStackTrace(PrintWriter s)  
         // 将此 throwable 及其追踪输出到指定的 PrintWriter  
         ex.printStackTrace(printWriter);  
-  
         // getCause() 返回此 throwable 的 cause；如果 cause 不存在或未知，则返回 null。  
         Throwable cause = ex.getCause();  
         while (cause != null) {  
@@ -263,9 +260,11 @@ public class CrashHandler implements UncaughtExceptionHandler {
     }  
   
     private void postReport(File file) {  
-        // TODO 使用HTTP Post 发送错误报告到服务器  
-        // 这里不再详述,开发者可以根据OPhoneSDN上的其他网络操作  
-        // 教程来提交错误报告  
+    	if(FileUtil.isFileExist(file, false) && !StringUtil.isEmpty(uploadLogFileUrl)){
+    		Map<String , Object> paramsMap = new HashMap<String, Object>();
+    		paramsMap.put("file", file);
+    		HttpRequestData.httpPostUploadData(uploadLogFileUrl, paramsMap);
+    	}   	
     }  
   
     /** 
