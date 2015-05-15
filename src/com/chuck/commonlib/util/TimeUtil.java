@@ -39,6 +39,7 @@ public class TimeUtil {
 		
 		if(!NetworkUtil.isNetworkAvailable(context)){
 			mGetTimeListenner.errorInfo("网络没有连接");
+			return;
 		}		
 		
     	final Resources res = context.getResources();
