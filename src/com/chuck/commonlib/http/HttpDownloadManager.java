@@ -20,16 +20,6 @@ public class HttpDownloadManager {
 	public final static String SAVE_PATH = "path";
 	public final static String DOWNLOAD_URL = "url";
 	
-	public final static String FILE_TYPE_VIDEO = "video";
-	public final static String FILE_TYPE_FLASH = "flash";
-	public final static String FILE_TYPE_PICTURE = "picture";
-	public final static String FILE_TYPE_APP = "app";
-	
-	public final static String PICTURES_SAVE_PATH = Environment.getExternalStorageDirectory() + File.separator + "cloudroom" + File.separator + "pictures/";
-	public final static String FLASHES_SAVE_PATH = Environment.getExternalStorageDirectory() + File.separator + "cloudroom" + File.separator + "flashes/";
-	public final static String VIDEOS_SAVE_PATH = Environment.getExternalStorageDirectory() + File.separator + "cloudroom" + File.separator + "videos/";
-	public final static String VIDEOS_SAVE_APP = Environment.getExternalStorageDirectory() + File.separator + "cloudroom" + File.separator + "app/";
-	
 	public static final String IS_LIST = "list";
 	
 	private static Context mContext;
@@ -40,13 +30,21 @@ public class HttpDownloadManager {
 	 * @author admin
 	 * @date 2015-4-30 下午1:40:48
 	 * @param fileUrls 文件地址集合
-	 * @param FileType 下载文件的类型
+	 * @param fileSavePath 下载文件的存放本地的地址
 	 */
-	public static void MultiFilsDownload(ArrayList<String> fileUrls , String fileType , Context context){
-		if(!CollectionUtil.isArrayListNull(fileUrls) && !StringUtil.isEmpty(fileType)){
+	public static void MultiFilsDownload(Context context , ArrayList<String> fileUrls , String fileSavePath){
+		if(!CollectionUtil.isArrayListNull(fileUrls) && !StringUtil.isEmpty(fileSavePath)){
 			mContext = context;
-			startDownload(fileUrls , fileType);
+			startDownload(fileUrls , fileSavePath);
 		}
+	}
+	
+	public static void MultiFilsDownload(Context context , ArrayList<String> fileUrls , String fileSavePath , DownloadListenner downloadListenner){
+		if(downloadListenner != null){
+			HttpDownloadService downloadService= new HttpDownloadService();
+			downloadService.setDownloadListenner(downloadListenner);
+		}
+		MultiFilsDownload(context, fileUrls, fileSavePath);
 	}
 	
 	/**
@@ -55,53 +53,26 @@ public class HttpDownloadManager {
 	 * @author admin
 	 * @date 2015-4-30 下午1:44:58
 	 * @param fileUrl  文件地址 
-	 * @param fileType 下载文件类型
+	 * @param fileType 下载文件的存放本地的地址
 	 */
-	public static void singleFileDownload(String fileUrl , String fileType , Context context){
-		if(!StringUtil.isEmpty(fileUrl) && !StringUtil.isEmpty(fileType)){
+	public static void singleFileDownload(Context context , String fileUrl , String fileSavePath){
+		if(!StringUtil.isEmpty(fileUrl) && !StringUtil.isEmpty(fileSavePath)){
 			mContext = context;
-			startDownload(fileUrl , fileType);
+			startDownload(fileUrl , fileSavePath);
 		}
 	}
 	
-	/**
-	 * 下载任意文件
-	 * 
-	 * @author admin
-	 * @date 2015-5-9 下午4:00:42
-	 * @param fileUrl 文件地址
-	 * @param fileSavePath 文件本地保存地址
-	 * @param context
-	 */
-	public static void downloadAnyTypeFile(String fileUrl , String fileSavePath , Context context){
-		if(URLUtil.isNetworkUrl(fileUrl) && !StringUtil.isEmpty(fileUrl) && !StringUtil.isEmpty(fileSavePath)){
-			Intent serviceIntent = new Intent(context , HttpDownloadService.class);
-			serviceIntent.putExtra(DOWNLOAD_URL, fileUrl);
-			serviceIntent.putExtra(SAVE_PATH, fileSavePath);
-			context.startService(serviceIntent);
-		}
-	}
-	
-	/**
-	 * 
-	 * 
-	 * @author admin
-	 * @date 2015-5-9 下午4:01:12
-	 * @param fileUrl
-	 * @param fileSavePath
-	 * @param context
-	 * @param downloadListenner 文件下载进度监听
-	 */
-	public static void downloadAnyTypeFile(String fileUrl , String fileSavePath , Context context , DownloadListenner downloadListenner){		
+	public static void singleFileDownload(Context context , String fileUrl , String fileSavePath , DownloadListenner downloadListenner){
 		if(downloadListenner != null){
 			HttpDownloadService downloadService= new HttpDownloadService();
 			downloadService.setDownloadListenner(downloadListenner);
 		}
-		downloadAnyTypeFile(fileUrl , fileSavePath , context);
+		
+		singleFileDownload(context, fileUrl, fileSavePath);
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static void startDownload(Object downloadUrl , String fileType){
+	private static void startDownload(Object downloadUrl , String savePath){
 		Intent serviceIntent = new Intent(mContext , HttpDownloadService.class);
 		if(downloadUrl instanceof ArrayList<?>){
 			serviceIntent.putStringArrayListExtra(DOWNLOAD_URL, (ArrayList<String>)downloadUrl);
@@ -111,13 +82,12 @@ public class HttpDownloadManager {
 			serviceIntent.putExtra(IS_LIST, false);
 		}
 		
-		if(fileType.equals(FILE_TYPE_FLASH)){
-			serviceIntent.putExtra(SAVE_PATH, FLASHES_SAVE_PATH);
-		}else if(fileType.equals(FILE_TYPE_VIDEO)){
-			serviceIntent.putExtra(SAVE_PATH, VIDEOS_SAVE_PATH);
+		if(!StringUtil.isEmpty(savePath)){
+			serviceIntent.putExtra(SAVE_PATH, savePath);	
 		}else{
-			serviceIntent.putExtra(SAVE_PATH, PICTURES_SAVE_PATH);
-		}	
+			String defaultSavePath = Environment.getExternalStorageDirectory() + File.separator;
+			serviceIntent.putExtra(SAVE_PATH, defaultSavePath);	
+		}
 		mContext.startService(serviceIntent);
 	}
 	

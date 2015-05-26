@@ -1,16 +1,20 @@
 package com.chuck.commonlib.util;
 
+import java.io.File;
+
 import com.chuck.commonlib.http.HttpDownloadManager;
 import com.chuck.commonlib.http.HttpDownloadService;
 import com.chuck.commonlib.http.HttpDownloadService.DownloadListenner;
 import com.lidroid.xutils.BitmapUtils;
 import android.content.Context;
+import android.os.Environment;
 import android.webkit.URLUtil;
 import android.widget.ImageView;
 
 public class BitmapUtil {
 	private Context mContext = null;
 	private BitmapUtils bitmapUtil = null;
+	private final String defaultSaveImagePath = Environment.getExternalStorageDirectory() + File.separator;
 	
 	public BitmapUtil(Context context){
 		mContext = context;
@@ -26,14 +30,24 @@ public class BitmapUtil {
 	 * @param isDownload 是否下载该图片
 	 * @param imageView 加载图片的控件
 	 */
-	public void showImage(String imagePath , boolean isDownload , ImageView imageView){
-		if(StringUtil.isEmpty(imagePath) || imageView == null){
+	public void showImage(String imageUrl, ImageView imageView){
+		if(StringUtil.isEmpty(imageUrl) || imageView == null){
 			return;		
 		}
-		bitmapUtil.display(imageView, imagePath);
-		if(isDownload){
-			startDownloadImage(imagePath);
+		bitmapUtil.display(imageView, imageUrl);
+	}
+	
+	public void showAndDownloadImage(String imageUrl , String saveImagePath ,ImageView imageView){
+		if(StringUtil.isEmpty(imageUrl) || imageView == null){
+			return;		
 		}
+		
+		if(StringUtil.isEmpty(saveImagePath)){
+			saveImagePath = defaultSaveImagePath;
+		}
+		
+		bitmapUtil.display(imageView, imageUrl);
+		startDownloadImage(imageUrl , saveImagePath);
 	}
 	
 	/**
@@ -46,17 +60,17 @@ public class BitmapUtil {
 	 * @param imageView 加载图片控件
 	 * @param downloadListenner 下载监听
 	 */
-	public void showImage(String imagePath , boolean isDownload , ImageView imageView , DownloadListenner downloadListenner){		
+	public void showAndDownloadImage(String imageUrl , String saveImagePath ,ImageView imageView , DownloadListenner downloadListenner){		
 		if(downloadListenner != null){
 			HttpDownloadService downloadService= new HttpDownloadService();
 			downloadService.setDownloadListenner(downloadListenner);
 		}
-		showImage(imagePath , isDownload , imageView);
+		showAndDownloadImage(imageUrl,saveImagePath,imageView);
 	}
 	
-	private void startDownloadImage(String imageUrl){
-		if(!StringUtil.isEmpty(imageUrl) && URLUtil.isNetworkUrl(imageUrl)){
-			HttpDownloadManager.singleFileDownload(imageUrl, HttpDownloadManager.FILE_TYPE_PICTURE, mContext);
+	private void startDownloadImage(String imageUrl , String saveImagePath){
+		if(!StringUtil.isEmpty(saveImagePath) && !StringUtil.isEmpty(imageUrl) && URLUtil.isNetworkUrl(imageUrl)){
+			HttpDownloadManager.singleFileDownload(mContext , imageUrl, saveImagePath);
 		}
 	}
 }

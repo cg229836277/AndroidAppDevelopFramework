@@ -16,6 +16,7 @@ import java.util.TreeSet;
 
 import com.chuck.commonlib.http.HttpDownloadManager;
 import com.chuck.commonlib.http.HttpRequestData;
+import com.chuck.commonlib.http.HttpRequestData.HttpRequestDataListenner;
 import com.chuck.commonlib.util.FileUtil;
 import com.chuck.commonlib.util.StringUtil;
 
@@ -263,7 +264,23 @@ public class CrashHandler implements UncaughtExceptionHandler {
     	if(FileUtil.isFileExist(file, false) && !StringUtil.isEmpty(uploadLogFileUrl)){
     		Map<String , Object> paramsMap = new HashMap<String, Object>();
     		paramsMap.put("file", file);
-    		HttpRequestData.httpPostUploadData(uploadLogFileUrl, paramsMap);
+    		HttpRequestData.httpPostUploadData(uploadLogFileUrl, paramsMap , new HttpRequestDataListenner() {
+				
+				@Override
+				public void requestSuccess(String callBackData) {
+					//请求成功
+				}
+				
+				@Override
+				public void requestPercent(float percent) {
+					
+				}
+				
+				@Override
+				public void requestError(String errorLog) {
+					//请求失败
+				}
+			});
     	}   	
     }  
   

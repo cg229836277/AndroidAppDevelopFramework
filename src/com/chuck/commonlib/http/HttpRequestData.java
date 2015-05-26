@@ -26,8 +26,29 @@ public class HttpRequestData {
 	private static HttpRequestDataListenner mHttpRequestListenner;	
 	
 	public interface HttpRequestDataListenner{
+		/**
+		 * 请求成功
+		 * 
+		 * @author admin
+		 * @date 2015-5-26 上午11:21:22
+		 * @param callBackData
+		 */
 		public void requestSuccess(String callBackData);
+		/**
+		 * 请求失败
+		 * 
+		 * @author admin
+		 * @date 2015-5-26 上午11:21:22
+		 * @param callBackData
+		 */
 		public void requestError(String errorLog);
+		/**
+		 * 请求过程百分比
+		 * 
+		 * @author admin
+		 * @date 2015-5-26 上午11:21:22
+		 * @param callBackData
+		 */
 		public void requestPercent(float percent);
 	}
 	
@@ -42,7 +63,11 @@ public class HttpRequestData {
 	 * @date 2015-4-27 下午7:21:14
 	 * @param uploadUrl
 	 */
-	public static void httpGetRequestData(String uploadUrl){
+	public static void httpGetRequestData(String uploadUrl , HttpRequestDataListenner listenner){
+		if(listenner != null){
+			mHttpRequestListenner = listenner;
+		}
+		
 		if(!StringUtil.isEmpty(uploadUrl)){
 			http.configTimeout(5000);
 			http.send(HttpMethod.GET,uploadUrl,new RequestCallBack<String>(){
@@ -78,7 +103,11 @@ public class HttpRequestData {
 	 * @param uploadUrl
 	 * @param params 请求参数默认是String Object(String , File...)类型
 	 */
-	public static void httpPostUploadData(String uploadUrl , Map<String , Object> paramsMap){
+	public static void httpPostUploadData(String uploadUrl , Map<String , Object> paramsMap , HttpRequestDataListenner listenner){
+		if(listenner != null){
+			mHttpRequestListenner = listenner;
+		}
+		
 		if(!StringUtil.isEmpty(uploadUrl)){		
 			RequestParams params = dealWithParams(paramsMap);
 			http.configTimeout(5000);
@@ -116,7 +145,7 @@ public class HttpRequestData {
 	 * @return
 	 */
 	private static RequestParams dealWithParams(Map<String, Object> paramsMap) {
-		if (CollectionUtil.isMapNull(paramsMap)) {
+		if (!CollectionUtil.isMapNull(paramsMap)) {
 			Iterator<Map.Entry<String, Object>> it = paramsMap.entrySet().iterator();
 			RequestParams params = new RequestParams();
 			while (it.hasNext()) {
