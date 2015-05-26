@@ -48,7 +48,7 @@
             android:textSize="10sp" />
     </LinearLayout>
 
-    <com.chuck.commonlib.list.CustomListView
+    <com.chuck.commonlib.view.CustomListView
         android:id="@+id/mListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
